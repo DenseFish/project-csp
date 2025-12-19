@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Netflix Sans';
+  src: url('/fonts/Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Netflix Sans';
+  src: url('/fonts/Medium.woff2') format('woff2');
+  font-weight: 700; /* Kita pakai Medium sebagai Bold */
+  font-style: normal;
+}
+
+:root {
+  --background: #141414; 
+  --foreground: #ffffff;
+  --netflix-red: #e50914;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Netflix Sans', Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.15s ease-out;
+}
