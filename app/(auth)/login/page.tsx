@@ -107,7 +107,7 @@ export default function LoginPage() {
 
           <div className="mt-16 text-[#737373]">
             <p className="text-base">
-              New to Netflix?{' '}
+              New to Uflix?{' '}
               <Link href="/register" className="text-white hover:underline">
                 Sign up now.
               </Link>
