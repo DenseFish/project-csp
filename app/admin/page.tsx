@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MovieAdminCard from "../components/MovieAdminCard";
 import ConfirmModal from "../components/ConfirmModal";
@@ -12,6 +13,8 @@ type Movie = {
 };
 
 export default function AdminPage() {
+  const router = useRouter();
+
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +33,10 @@ export default function AdminPage() {
     }
   };
 
+  // kalau muncul berarti sudah lolos role Admin
   useEffect(() => {
+    console.log("[Client] AdminPage mounted. Access granted by AdminLayout.");
+    
     fetchMovies();
   }, []);
 
@@ -52,7 +58,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="p-10">
+    <div className="p-10 mt-10">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Admin Panel</h1>
 

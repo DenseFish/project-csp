@@ -31,43 +31,36 @@ export default function RegisterPage() {
     setEmailError(false);
     setPasswordError(false);
 
-    let isValid = true;
-    if (!validateEmail(email)) {
-      setEmailError(true);
-      isValid = false;
-    }
-    if (password.length < 4 || password.length > 60) {
-      setPasswordError(true);
-      isValid = false;
-    }
-
-    if (!isValid) return;
+    let isValid = true
+    if (!validateEmail(email)) { setEmailError(true); isValid = false }
+    if (password.length < 4 || password.length > 60) { setPasswordError(true); isValid = false }
+    if (!isValid) return
 
     setLoading(true); // Mulai loading
 
-    // 1. Sign Up ke Supabase
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      // Panggil API Signup
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (error) {
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong");
+      }
+
+      // berhasil
+      alert("Registration successful! Please login.");
+      router.push("/login");
+
+    } catch (error: any) {
       alert(error.message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // 2. KUNCI SUKSES: Logout Paksa
-    // Karena tidak ada useEffect yang mengganggu, baris ini pasti akan dieksekusi
-    await supabase.auth.signOut();
-
-    // 3. Redirect ke Login
-    alert("Register berhasil! Silakan login dengan akun baru Anda.");
-    router.push("/login");
-    setLoading(false);
   };
 
   return (

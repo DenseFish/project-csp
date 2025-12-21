@@ -1,13 +1,42 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerSupabase } from "@/lib/supabase/server";
 
-const supabase = createClient(
+
+const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY! // ⬅️ PENTING
 );
 
+// ROLE CHECK
+async function verifyAdmin() {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized", status: 401 };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { error: "Forbidden", status: 403 };
+  }
+
+  return { user };
+}
+
 export async function GET() {
-  const { data, error } = await supabase
+  const auth = await verifyAdmin();
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const { data, error } = await adminSupabase
     .from("movies")
     .select("*")
     .order("id", { ascending: false });
@@ -20,9 +49,14 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await verifyAdmin();
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const body = await req.json();
 
-  const { error } = await supabase.from("movies").insert(body);
+  const { error } = await adminSupabase.from("movies").insert(body);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,6 +66,11 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const auth = await verifyAdmin();
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
@@ -44,7 +83,7 @@ export async function PUT(req: Request) {
 
   const body = await req.json();
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("movies")
     .update(body)
     .eq("id", id);
@@ -57,6 +96,11 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await verifyAdmin();
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
@@ -67,7 +111,7 @@ export async function DELETE(req: Request) {
     );
   }
 
-  const { error } = await supabase.from("movies").delete().eq("id", id);
+  const { error } = await adminSupabase.from("movies").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

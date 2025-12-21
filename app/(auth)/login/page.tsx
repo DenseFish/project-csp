@@ -13,23 +13,6 @@ export default function LoginPage() {
   const [emailError, setEmailError] = useState(false)
   const [passwordError, setPasswordError] = useState(false)
 
-  useEffect(() => {
-    const checkLogin = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        router.push(profile?.role === 'admin' ? '/admin' : '/')
-      } else {
-        setLoading(false)
-      }
-    }
-    checkLogin()
-  }, [router])
-
   const validateEmail = (inputEmail: string) => /\S+@\S+\.\S+/.test(inputEmail)
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -42,19 +25,36 @@ export default function LoginPage() {
     if (password.length < 4 || password.length > 60) { setPasswordError(true); isValid = false }
     if (!isValid) return
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      alert(error.message)
+    const res = await fetch('/api/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.message)
       return
     }
 
-    // Cek Role setelah login berhasil
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id).single()
-    router.push(profile?.role === 'admin' ? '/admin' : '/')
-  }
+    // Ambil Role dari API /api/me
+    try {
+      const meRes = await fetch('/api/me')
+      const meData = await meRes.json()
 
-  if (loading) return null
+      // Cek Role dan ke page sesuai role
+      if (meData.role === 'admin') {
+        router.push("/admin")
+      } else {
+        router.push("/")
+      }
+      
+      router.refresh() 
+    } catch (error) {
+      console.error("Gagal mengambil data role:", error)
+      router.push("/") // Fallback jika gagal ambil role
+    }
+  }
 
   return (
     <div className="relative min-h-screen w-full bg-black md:bg-[url('/images/bg-login.jpg')] bg-cover bg-center bg-no-repeat bg-fixed font-['Netflix_Sans']">

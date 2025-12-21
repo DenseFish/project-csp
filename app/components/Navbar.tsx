@@ -10,6 +10,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [role, setRole] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -22,30 +23,66 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    const fetchRole = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const handleUserSession = async (session: any) => {
+      const user = session?.user;
+
       if (!user) {
+        console.log("Belum login / Session kosong");
         setRole(null);
+        setUsername(null);
         return;
       }
+
+      console.log("User detected:", user.email);
+
+      // Set Username
+      if (user.email) {
+        setUsername(user.email.split("@")[0]);
+      }
+
+      // Set Role
       const { data } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
+      
       setRole(data?.role ?? null);
     };
-    fetchRole();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleUserSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth Event:", _event); // event apa yang terjadi
+      handleUserSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
+  const handleSignOutClick = async () => {
+    // Sign out logic here
+    fetch('/api/signout', { method: 'POST' })
+        .then((res) => {
+          if (res.ok) {
+            // sukses, akan ke page login
+            window.location.href = '/login';
+          }
+        })
+      .catch((error) => {
+        console.error("Logout failed:", error);
+      });
   };
 
-  if (pathname === "/login" || pathname === "/register") return null;
+  if (
+    pathname === "/login" || 
+    pathname === "/register" || 
+    pathname?.startsWith("/movies")
+  ) {
+    return null;
+  }
 
   return (
     <nav
@@ -127,10 +164,13 @@ export default function Navbar() {
               {/* Kontainer Menu yang Sebenarnya */}
               <div className="bg-black border border-gray-700 rounded shadow-lg overflow-hidden flex flex-col">
                 <div className="px-4 py-2 text-xs text-gray-400 border-b border-gray-700 cursor-default">
-                  Account
+                  <p className="text-xs text-gray-500 mb-1">Signed in as</p>
+                  <p className="text-white font-semibold truncate">
+                    {username || "none"}
+                  </p>
                 </div>
                 <button
-                  onClick={logout}
+                  onClick={handleSignOutClick}
                   className="w-full text-left px-4 py-3 text-sm text-white hover:bg-[#e50914] transition-colors"
                 >
                   Sign Out

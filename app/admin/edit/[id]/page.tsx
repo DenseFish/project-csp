@@ -115,7 +115,7 @@ export default function EditMoviePage() {
   if (!movie) return null;
 
   return (
-    <div className="p-10">
+    <div className="p-10 mt-10">
       <h1 className="text-2xl font-bold mb-6">Edit Movie</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

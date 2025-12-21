@@ -17,16 +17,14 @@ export default function Home() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const res = await fetch("/api/me");
 
-      if (!session) {
+      if (!res.ok) {
         router.push("/login");
-      } else {
-        setUser(session.user);
-        setLoading(false);
+        return;
       }
+
+      setLoading(false);
     };
 
     checkUser();

@@ -6,6 +6,7 @@ type Props = {
   description: string;
   confirmText: string;
   cancelText?: string;
+  danger?: boolean;
   onConfirm: () => void;
   onCancel?: () => void;
 };
