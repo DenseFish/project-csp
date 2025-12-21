@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@supabase/supabase-js": "^2.87.1",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.89.0",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "lodash": "^4.17.21",
