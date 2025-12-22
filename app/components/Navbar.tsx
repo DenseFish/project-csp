@@ -115,22 +115,26 @@ export default function Navbar() {
                 Home
               </Link>
             </li>
-            <li>
-              <Link
-                href="/tv-shows"
-                className="hover:text-gray-400 cursor-pointer transition"
-              >
-                TV Shows
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/movie"
-                className="hover:text-gray-400 cursor-pointer transition"
-              >
-                Movies
-              </Link>
-            </li>
+            {role !== "admin" && (
+              <li>
+                <Link
+                  href="/tv-shows"
+                  className="hover:text-gray-400 cursor-pointer transition"
+                >
+                  TV Shows
+                </Link>
+              </li>
+            )}
+            {role !== "admin" && (
+              <li>
+                <Link
+                  href="/movie"
+                  className="hover:text-gray-400 cursor-pointer transition"
+                >
+                  Movies
+                </Link>
+              </li>
+            )}
             {role !== "admin" && (
               <li>
                 <Link
