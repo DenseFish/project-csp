@@ -39,9 +39,8 @@ export default function CreateMoviePage() {
         contentType: poster.type,
       });
 
-      const posterUrl = supabase.storage
-        .from("posters")
-        .getPublicUrl(filePath).data.publicUrl;
+      const posterUrl = supabase.storage.from("posters").getPublicUrl(filePath)
+        .data.publicUrl;
 
       const res = await fetch("/api/admin/movies", {
         method: "POST",
@@ -98,13 +97,23 @@ export default function CreateMoviePage() {
             onChange={(e) => handlePosterChange(e.target.files?.[0] || null)}
           />
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded"
-          >
-            {loading ? "Saving..." : "Save"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push("/admin")}
+              type="button"
+              className="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded"
+            >
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
         </div>
 
         <div>
@@ -125,7 +134,7 @@ export default function CreateMoviePage() {
         title="Movie Added Successfully"
         description="The movie has been added to the catalog."
         confirmText="Close"
-        cancelText=""               // ⬅️ HILANGKAN CANCEL
+        cancelText="" // ⬅️ HILANGKAN CANCEL
         onConfirm={() => router.push("/admin")}
         onCancel={() => router.push("/admin")}
       />
