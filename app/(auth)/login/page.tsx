@@ -68,6 +68,7 @@ export default function LoginPage() {
               placeholder="Email or phone number"
               value={email}
               onChange={(e) => { setEmail(e.target.value); if(emailError) setEmailError(false) }}
+              suppressHydrationWarning={true}
             />
             {emailError && <p className="mt-1 text-xs text-[#e50914]">Please enter a valid email.</p>}
           </div>
@@ -79,6 +80,7 @@ export default function LoginPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); if(passwordError) setPasswordError(false) }}
+              suppressHydrationWarning={true}
             />
             {passwordError && <p className="mt-1 text-xs text-[#e50914]">Password must be between 4 and 60 characters.</p>}
           </div>
