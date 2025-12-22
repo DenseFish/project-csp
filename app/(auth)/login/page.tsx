@@ -85,7 +85,9 @@ export default function LoginPage() {
             {passwordError && <p className="mt-1 text-xs text-[#e50914]">Password must be between 4 and 60 characters.</p>}
           </div>
 
-          <button type="submit" className="mt-6 w-full rounded bg-[#e50914] py-3 font-bold text-white hover:bg-[#c11119] transition duration-200">
+          <button type="submit" className="mt-6 w-full rounded bg-[#e50914] py-3 font-bold text-white hover:bg-[#c11119] transition duration-200"
+          suppressHydrationWarning={true}
+          >
             Sign In
           </button>
           
