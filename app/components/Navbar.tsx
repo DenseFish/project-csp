@@ -101,7 +101,10 @@ export default function Navbar() {
 
           <ul className="hidden md:flex gap-5 text-sm font-medium text-gray-300">
             <li>
-              <Link href="/" className="text-white font-bold cursor-pointer">
+              <Link 
+                href={role === "admin" ? "/admin" : "/"} 
+                className="text-white font-bold cursor-pointer"
+              >
                 Home
               </Link>
             </li>
