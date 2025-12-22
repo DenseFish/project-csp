@@ -17,60 +17,63 @@ export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [movies, setMovies] = useState<Movie[]>([])
   const [loading, setLoading] = useState(false)
-
-  // 🔥 FILTER STATE
+  const [role, setRole] = useState<'admin' | 'user' | null>(null)
   const [sort, setSort] = useState<'newest' | 'oldest' | 'az' | 'za'>('newest')
-  const [onlyTmdb, setOnlyTmdb] = useState(false)
 
+  // Ambil role user
   useEffect(() => {
-    const searchMovies = async () => {
-  setLoading(true)
+    const getUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const userRole = user.user_metadata?.role as 'admin' | 'user' | null
+        setRole(userRole || 'user')
+      }
+    }
+    getUserRole()
+  }, [])
 
-  let supabaseQuery = supabase
-    .from('movies')
-    .select('*')
+  // Fetch movies
+  useEffect(() => {
+    if (!role) return
+    const fetchMovies = async () => {
+      setLoading(true)
+      try {
+        let data: Movie[] = []
 
-  // 🔎 SEARCH
-  if (query.trim().length > 0) {
-    supabaseQuery = supabaseQuery.ilike('title', `%${query}%`)
-  }
+        if (role === 'admin') {
+          const res = await fetch(`/api/admin/movies/search?query=${query}&sort=${sort}`)
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error || 'Failed to fetch')
+          data = json
+        } else {
+          // User fetch biasa
+          let supabaseQuery = supabase.from('movies').select('*')
+          if (query.trim()) supabaseQuery = supabaseQuery.ilike('title', `%${query}%`)
+          switch (sort) {
+            case 'newest': supabaseQuery = supabaseQuery.order('created_at',{ascending:false}); break
+            case 'oldest': supabaseQuery = supabaseQuery.order('created_at',{ascending:true}); break
+            case 'az': supabaseQuery = supabaseQuery.order('title',{ascending:true}); break
+            case 'za': supabaseQuery = supabaseQuery.order('title',{ascending:false}); break
+          }
+          const { data: supaData } = await supabaseQuery
+          data = supaData ?? []
+        }
 
-  // 🎬 FILTER TMDB
-  if (onlyTmdb) {
-    supabaseQuery = supabaseQuery.not('tmdb_id', 'is', null)
-  }
+        setMovies(data)
+      } catch(err){
+        console.error(err)
+        setMovies([])
+      }
+      setLoading(false)
+    }
 
-  // 🔃 SORT
-  switch (sort) {
-    case 'newest':
-      supabaseQuery = supabaseQuery.order('created_at', { ascending: false })
-      break
-    case 'oldest':
-      supabaseQuery = supabaseQuery.order('created_at', { ascending: true })
-      break
-    case 'az':
-      supabaseQuery = supabaseQuery.order('title', { ascending: true })
-      break
-    case 'za':
-      supabaseQuery = supabaseQuery.order('title', { ascending: false })
-      break
-  }
-
-  const { data } = await supabaseQuery
-
-  setMovies(data ?? [])
-  setLoading(false)
-}
-
-
-    const timeoutId = setTimeout(searchMovies, 500)
+    const timeoutId = setTimeout(fetchMovies, 500)
     return () => clearTimeout(timeoutId)
-  }, [query, sort, onlyTmdb])
+  }, [query, sort, role])
 
   return (
     <div className="min-h-screen pt-24 px-4 md:px-12 bg-[#141414]">
-      
-      {/* 🔎 SEARCH */}
+      {/* SEARCH */}
       <div className="w-full max-w-3xl mx-auto mb-6">
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -78,23 +81,20 @@ export default function SearchPage() {
           </div>
           <input
             type="text"
-            className="block w-full pl-12 pr-4 py-4 bg-[#222] text-white placeholder-gray-500 focus:outline-none focus:bg-[#333] focus:ring-1 focus:ring-white text-xl"
-            placeholder="Search movies, TV shows..."
+            placeholder="Search movies..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            className="block w-full pl-12 pr-4 py-4 bg-[#222] text-white placeholder-gray-500 focus:outline-none focus:bg-[#333] focus:ring-1 focus:ring-white text-xl"
             autoFocus
           />
         </div>
       </div>
 
-      {/* 🎛 FILTER BAR (Netflix-style simple) */}
+      {/* FILTER */}
       <div className="flex flex-wrap items-center gap-4 max-w-3xl mx-auto mb-10">
         <select
           value={sort}
-          onChange={(e) =>
-  setSort(e.target.value as 'newest' | 'oldest' | 'az' | 'za')
-}
-
+          onChange={(e) => setSort(e.target.value as 'newest' | 'oldest' | 'az' | 'za')}
           className="bg-[#222] text-white px-4 py-2 rounded-md focus:outline-none"
         >
           <option value="newest">Newest</option>
@@ -102,39 +102,14 @@ export default function SearchPage() {
           <option value="az">A – Z</option>
           <option value="za">Z – A</option>
         </select>
-
-        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={onlyTmdb}
-            onChange={() => setOnlyTmdb(!onlyTmdb)}
-            className="accent-red-600"
-          />
-          Official (TMDB)
-        </label>
       </div>
 
-      {/* RESULT INFO */}
-      {query && !loading && (
-        <h2 className="text-gray-400 mb-6 text-lg">
-          {movies.length > 0
-            ? `Results for "${query}"`
-            : `No results found for "${query}"`}
-        </h2>
-      )}
-
-      {loading && (
-        <p className="text-gray-400 text-center mb-6">
-          Searching movies...
-        </p>
-      )}
-
-      {/* 🎬 MOVIE GRID */}
+      {/* MOVIE GRID */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {movies.map((movie) => (
           <Link
             key={movie.id}
-            href={`/movies/${movie.id}`}
+            href={role === 'admin' ? `/admin/edit/${movie.id}` : `/movies/${movie.id}`}
             className="group relative transition-transform hover:scale-105 hover:z-10"
           >
             <img
