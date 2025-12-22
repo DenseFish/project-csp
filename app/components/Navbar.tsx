@@ -107,7 +107,7 @@ export default function Navbar() {
             </li>
             <li>
               <Link
-                href="#"
+                href="/tv-shows"
                 className="hover:text-gray-400 cursor-pointer transition"
               >
                 TV Shows
@@ -115,7 +115,7 @@ export default function Navbar() {
             </li>
             <li>
               <Link
-                href="#"
+                href="/movie"
                 className="hover:text-gray-400 cursor-pointer transition"
               >
                 Movies
