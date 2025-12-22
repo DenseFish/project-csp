@@ -4,15 +4,15 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 export interface FavoriteMovie {
-  id: string;
+  id: number;
   title: string;
-  poster: string;
+  poster_url: string;
 }
 
 interface MyListContextType {
   favorites: FavoriteMovie[];
-  toggleFavorite: (movie: FavoriteMovie) => void;
-  isFavorite: (id: string) => boolean;
+  toggleFavorite: (movieId: number) => Promise<void>;
+  isFavorite: (movieId: number) => boolean;
 }
 
 const MyListContext = createContext<MyListContextType | null>(null);
@@ -20,7 +20,6 @@ const MyListContext = createContext<MyListContextType | null>(null);
 export function MyListProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
   // ambil user login
   useEffect(() => {
@@ -29,43 +28,62 @@ export function MyListProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // reset saat user berubah
+  // load my list dari database
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFavorites([]);
-    setLoaded(false);
+    if (!userId) return;
+
+    const loadMyList = async () => {
+      const { data } = await supabase
+        .from("my_list")
+        .select(`
+          movie:movies (
+            id,
+            title,
+            poster_url
+          )
+        `)
+        .eq("user_id", userId);
+
+      if (data) {
+        setFavorites(data.map((item: any) => item.movie));
+      }
+    };
+
+    loadMyList();
   }, [userId]);
 
-  const storageKey = userId ? `favorites_${userId}` : "favorites_guest";
+  // add / remove
+  const toggleFavorite = async (movieId: number) => {
+    if (!userId) return;
 
-  // load sekali per user
-  useEffect(() => {
-    if (!userId || loaded) return;
+    const exists = favorites.some((m) => m.id === movieId);
 
-    const stored = localStorage.getItem(storageKey);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFavorites(stored ? JSON.parse(stored) : []);
-    setLoaded(true);
-  }, [userId, storageKey, loaded]);
+    if (exists) {
+      await supabase
+        .from("my_list")
+        .delete()
+        .eq("user_id", userId)
+        .eq("movie_id", movieId);
 
-  // simpan perubahan
-  useEffect(() => {
-    if (!userId || !loaded) return;
-    localStorage.setItem(storageKey, JSON.stringify(favorites));
-  }, [favorites, storageKey, userId, loaded]);
+      setFavorites((prev) => prev.filter((m) => m.id !== movieId));
+    } else {
+      await supabase.from("my_list").insert({
+        user_id: userId,
+        movie_id: movieId,
+      });
 
-  const toggleFavorite = (movie: FavoriteMovie) => {
-    setFavorites((prev) => {
-      const exists = prev.some((m) => m.id === movie.id);
-      return exists
-        ? prev.filter((m) => m.id !== movie.id)
-        : [...prev, movie];
-    });
+      const { data } = await supabase
+        .from("movies")
+        .select("id, title, poster_url")
+        .eq("id", movieId)
+        .single();
+
+      if (data) setFavorites((prev) => [...prev, data]);
+    }
   };
 
-  const isFavorite = (id: string) => {
-    return favorites.some((m) => m.id === id);
-  };
+  const isFavorite = (movieId: number) =>
+    favorites.some((m) => m.id === movieId);
 
   return (
     <MyListContext.Provider value={{ favorites, toggleFavorite, isFavorite }}>

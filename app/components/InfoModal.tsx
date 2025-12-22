@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { X, Play, Plus, ThumbsUp } from "lucide-react";
+import { X, Play, Plus, ThumbsUp, Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import useInfoModal from "@/app/hooks/useInfoModal";
 import { useRouter } from "next/navigation";
+import { useMyList } from "@/app/context/MyListContext";
 
 export default function InfoModal() {
   const { isOpen, closeModal, movieId } = useInfoModal();
   const [movie, setMovie] = useState<any>(null);
   const router = useRouter();
+  const { toggleFavorite, isFavorite } = useMyList();
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -73,9 +75,16 @@ export default function InfoModal() {
                   Play
                 </button>
 
-                <button className="cursor-pointer border border-white/40 w-10 h-10 rounded-full flex justify-center items-center text-white hover:bg-neutral-800 transition">
-                  <Plus className="w-5" />
-                </button>
+                <div onClick={() => toggleFavorite(movie.id)}>
+                  <Heart
+                    className={
+                      isFavorite(movie.id)
+                        ? "text-pink-500 fill-pink-500"
+                        : "text-white"
+                    }
+                  />
+                </div>
+
                 <button className="cursor-pointer border border-white/40 w-10 h-10 rounded-full flex justify-center items-center text-white hover:bg-neutral-800 transition">
                   <ThumbsUp className="w-5" />
                 </button>

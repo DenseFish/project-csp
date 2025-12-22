@@ -106,11 +106,7 @@ export default function MovieCard({ data }: MovieCardProps) {
             <div
               onClick={() => {
                 if (!data.id) return;
-                toggleFavorite({
-                  id: String(data.id),
-                  title: data.title,
-                  poster: data.poster_url,
-                });
+                toggleFavorite(data.id);
               }}
               className="
               cursor-pointer 
@@ -128,7 +124,7 @@ export default function MovieCard({ data }: MovieCardProps) {
                 className={`
                 w-3 h-3 lg:w-6 lg:h-6
                 transition
-              ${isFavorite(String(data.id))
+              ${isFavorite(data.id)
                 ? "text-pink-500 fill-pink-500"
                 : "text-white"
                 }
