@@ -3,62 +3,91 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
-export interface FavoriteMovie {
+export type FavoriteMovie = {
   id: number;
   title: string;
   poster_url: string;
-}
+};
 
-interface MyListContextType {
+type MyListContextType = {
   favorites: FavoriteMovie[];
   toggleFavorite: (movieId: number) => Promise<void>;
   isFavorite: (movieId: number) => boolean;
-}
+};
 
 const MyListContext = createContext<MyListContextType | null>(null);
 
 export function MyListProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // ambil user login
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-    });
+    setMounted(true);
   }, []);
 
-  // load my list dari database
   useEffect(() => {
-    if (!userId) return;
+    if (!mounted) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user?.id ?? null);
+    });
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (!userId) {
+      setFavorites([]);
+      return;
+    }
 
     const loadMyList = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("my_list")
-        .select(`
+        .select(
+          `
           movie:movies (
             id,
             title,
             poster_url
           )
-        `)
+        `
+        )
         .eq("user_id", userId);
 
-      if (data) {
-        setFavorites(data.map((item: any) => item.movie));
+      if (!error && data) {
+        setFavorites(data.map((row: any) => row.movie));
       }
     };
 
     loadMyList();
-  }, [userId]);
+  }, [userId, mounted]);
 
-  // add / remove
   const toggleFavorite = async (movieId: number) => {
     if (!userId) return;
 
     const exists = favorites.some((m) => m.id === movieId);
 
     if (exists) {
+      const confirmRemove = window.confirm(
+        "Yakin ingin menghapus film ini dari My List?"
+      );
+
+      if (!confirmRemove) return;
+
       await supabase
         .from("my_list")
         .delete()
@@ -78,15 +107,21 @@ export function MyListProvider({ children }: { children: React.ReactNode }) {
         .eq("id", movieId)
         .single();
 
-      if (data) setFavorites((prev) => [...prev, data]);
+      if (data) {
+        setFavorites((prev) => [...prev, data]);
+      }
     }
   };
 
   const isFavorite = (movieId: number) =>
     favorites.some((m) => m.id === movieId);
 
+  if (!mounted) return null;
+
   return (
-    <MyListContext.Provider value={{ favorites, toggleFavorite, isFavorite }}>
+    <MyListContext.Provider
+      value={{ favorites, toggleFavorite, isFavorite }}
+    >
       {children}
     </MyListContext.Provider>
   );
