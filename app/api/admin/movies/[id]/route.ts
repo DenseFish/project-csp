@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -7,12 +7,13 @@ const supabase = createClient(
 );
 
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(context.params.id);
+  const { id } = await params;
+  const movieId = Number(id);
 
-  if (Number.isNaN(id)) {
+  if (Number.isNaN(movieId)) {
     return NextResponse.json(
       { error: "Invalid movie id" },
       { status: 400 }
@@ -22,7 +23,7 @@ export async function DELETE(
   const { error } = await supabase
     .from("movies")
     .delete()
-    .eq("id", id);
+    .eq("id", movieId);
 
   if (error) {
     console.error("DELETE error:", error.message);
