@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { useMyList } from "@/app/hooks/useMyList";
+import { useMyList } from "@/app/context/MyListContext";
+
 
 export default function MyListPage() {
   const { favorites, toggleFavorite, isFavorite } = useMyList();

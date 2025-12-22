@@ -4,7 +4,8 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Play, Plus, ThumbsUp, ChevronDown, Heart } from "lucide-react";
 import useInfoModal from "@/app/hooks/useInfoModal";
-import { useMyList } from "@/app/hooks/useMyList";
+import { useMyList } from "@/app/context/MyListContext";
+
 
 interface MovieCardProps {
   data: Record<string, any>;
@@ -13,7 +14,7 @@ interface MovieCardProps {
 export default function MovieCard({ data }: MovieCardProps) {
   const router = useRouter();
   const { openModal } = useInfoModal();
-  const { toggleFavorite, isFavorite } = useMyList();
+  const { toggleFavorite, isFavorite} = useMyList();
 
   const handlePlay = () => {
     router.push(`/movies/${data.id}`);
