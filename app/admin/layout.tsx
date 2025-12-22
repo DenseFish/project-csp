@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Navbar from "@/app/components/Navbar";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export default async function AdminLayout({
@@ -27,5 +28,10 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <Navbar/>
+      {children}
+    </>
+  );
 }
