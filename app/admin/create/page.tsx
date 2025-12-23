@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -63,6 +63,30 @@ export default function CreateMoviePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile?.role?.toLowerCase() !== "admin") {
+        console.warn("Akses ditolak: Bukan Admin");
+        router.push("/");
+      }
+    };
+
+    checkAdmin();
+  }, [router]);
 
   return (
     <div className="p-10 mt-10">
