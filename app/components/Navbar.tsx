@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, Bell, User } from "lucide-react";
+import { error } from "console";
 
 export default function Navbar() {
   const router = useRouter();
@@ -14,7 +15,10 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log("Current Navbar Role State:", role);
+  useEffect(() => {
+    console.log("Navbar Role Updated:", role);
+    console.log("Navbar Loading Status:", isLoading);
+  }, [role, isLoading]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,11 +30,15 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    console.log("Current Navbar State -> Role:", role, "| Loading:", isLoading);
+  }, [role, isLoading]);
+
+  useEffect(() => {
     const handleUserSession = async (session: any) => {
       const user = session?.user;
 
       if (!user) {
-        console.log("Belum login / Session kosong");
+        console.log("Auth: Tidak ada user login");
         setRole(null);
         setUsername(null);
         setIsLoading(false);
@@ -45,17 +53,20 @@ export default function Navbar() {
       }
 
       try {
+        console.log("Auth: Mengambil role untuk user ID:", user.id);
         const { data } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", user.id)
           .single();
+
+        if (error) throw error;
         
         const userRole = data?.role?.toLowerCase() ?? null;
         setRole(userRole);
-        console.log("Fetched Role from DB:", userRole);
-      } catch (error) {
-        console.error(error);
+        console.log("Auth Success: Role didapat dari DB ->", userRole);
+      } catch (error: any) {
+        console.error("Auth Error: Gagal ambil profil ->", error.message);
       } finally {
         setIsLoading(false);
       }
@@ -66,7 +77,7 @@ export default function Navbar() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth Event:", _event); // event apa yang terjadi
+      console.log("Auth Event Triggered:", _event); // event apa yang terjadi
       handleUserSession(session);
     });
 
