@@ -12,6 +12,9 @@ export default function Navbar() {
   const [role, setRole] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  console.log("Current Navbar Role State:", role);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +33,7 @@ export default function Navbar() {
         console.log("Belum login / Session kosong");
         setRole(null);
         setUsername(null);
+        setIsLoading(false);
         return;
       }
 
@@ -40,15 +44,22 @@ export default function Navbar() {
         setUsername(user.email.split("@")[0]);
       }
 
-      // Set Role
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      
-      setRole(data?.role ?? null);
-    };
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        
+        const userRole = data?.role?.toLowerCase() ?? null;
+        setRole(userRole);
+        console.log("Fetched Role from DB:", userRole);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };console.log("Role:", role);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       handleUserSession(session);
@@ -63,12 +74,12 @@ export default function Navbar() {
   }, []);
 
   const handleSignOutClick = async () => {
-    // Sign out logic here
     fetch('/api/signout', { method: 'POST' })
         .then((res) => {
           if (res.ok) {
             // sukses, akan ke page login
-            window.location.href = '/login';
+            router.push('/login');
+            router.refresh();
           }
         })
       .catch((error) => {
@@ -108,48 +119,46 @@ export default function Navbar() {
                 Home
               </Link>
             </li>
-            {role !== "admin" && (
-              <li>
-                <Link
-                  href="/tv-shows"
-                  className="hover:text-gray-400 cursor-pointer transition"
-                >
-                  TV Shows
-                </Link>
-              </li>
-            )}
-            {role !== "admin" && (
-              <li>
-                <Link
-                  href="/movie"
-                  className="hover:text-gray-400 cursor-pointer transition"
-                >
-                  Movies
-                </Link>
-              </li>
-            )}
-            {role !== "admin" && (
-              <li>
-                <Link
-                  href="/mylist"
-                  className="hover:text-gray-400 cursor-pointer transition"
-                >
-                  My List
-                </Link>
-              </li>
+            {!isLoading && role !== "admin" && (
+              <>
+                <li>
+                  <Link
+                    href="/tv-shows"
+                    className="hover:text-gray-400 cursor-pointer transition"
+                  >
+                    TV Shows
+                  </Link>
+                </li>
+                <li> 
+                  <Link
+                    href="/movie"
+                    className="hover:text-gray-400 cursor-pointer transition"
+                  >
+                    Movies
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/mylist"
+                    className="hover:text-gray-400 cursor-pointer transition"
+                  >
+                    My List
+                  </Link>
+                </li>
+              </>
             )}
           </ul>
         </div>
 
         {/* BAGIAN KANAN: Search, Admin, User */}
         <div className="flex items-center gap-5 text-white">
-          {role !== "admin" && (
+          {!isLoading && role !== "admin" && (
             <Link href="/search">
-              <Search className="w-5 h-5 cursor-pointer hover:text-gray-300" />
+              <Search className="w-5 h-5" />
             </Link>
           )}
 
-          {role === "admin" && (
+          {!isLoading && role === "admin" && (
             <Link
               href="/admin"
               className="text-xs font-bold border border-white px-2 py-1 rounded hover:bg-white hover:text-black transition"
