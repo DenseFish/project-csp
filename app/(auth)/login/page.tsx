@@ -39,20 +39,22 @@ export default function LoginPage() {
 
     // Ambil Role dari API /api/me
     try {
-      const meRes = await fetch('/api/me')
-      const meData = await meRes.json()
+      const meRes = await fetch('/api/me');
+      if (!meRes.ok) throw new Error("Gagal fetch profile");
+      const meData = await meRes.json();
 
       // Cek Role dan ke page sesuai role
       if (meData.role === 'admin') {
-        router.push("/admin")
+        router.push("/admin");
       } else {
-        router.push("/")
+        router.push("/");
       }
       
       router.refresh() 
     } catch (error) {
-      console.error("Gagal mengambil data role:", error)
-      router.push("/") // Fallback jika gagal ambil role
+      console.error("Gagal mengambil data role:", error);
+      router.push("/"); // Fallback jika gagal ambil role
+      router.refresh();
     }
   }
 
